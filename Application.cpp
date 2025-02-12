@@ -810,12 +810,6 @@ D3D12_CPU_DESCRIPTOR_HANDLE App::DepthStencilView()const
 
 void App::ExportTexture()
 {
-	D3D12_HEAP_PROPERTIES heapProps = {};
-	heapProps.Type = D3D12_HEAP_TYPE_READBACK;
-	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-	heapProps.CreationNodeMask = 1;
-	heapProps.VisibleNodeMask = 1;
 
 	D3D12_RESOURCE_DESC desc = m_PerlinTexture->GetDesc();
 	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
@@ -833,23 +827,18 @@ void App::ExportTexture()
 	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 	HRESULT hr = m_Device->CreateCommittedResource(
-		&heapProps,
+		&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_READBACK),
 		D3D12_HEAP_FLAG_NONE,
 		&bufferDesc,
 		D3D12_RESOURCE_STATE_COPY_DEST,
 		nullptr,
 		IID_PPV_ARGS(&pReadbackBuffer)
 	);
-	// 资源屏障：将源纹理转为COPY_SOURCE状态
-	D3D12_RESOURCE_BARRIER barrier = {};
-	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = m_PerlinTexture.Get();
-	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
-	m_CommandList->ResourceBarrier(1, &barrier);
 
-	// 执行复制
+
+	m_CommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(
+		m_PerlinTexture.Get(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COPY_SOURCE));
+
 	D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
 	srcLoc.pResource = m_PerlinTexture.Get();
 	srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
@@ -870,20 +859,17 @@ void App::ExportTexture()
 	FlushCommandQueue();
 	ThrowIfFailed(m_CommandAllocator->Reset());
 
-	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
-	// Reusing the command list reuses memory.
+
 	ThrowIfFailed(m_CommandList->Reset(m_CommandAllocator.Get(), m_PSOs["opaque"].Get()));
 
-	// 3. 映射数据并处理
 	BYTE* pData;
-	hr = pReadbackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pData));
-	if (FAILED(hr)) { /* 处理错误 */ }
+	ThrowIfFailed(pReadbackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pData)));
 
 
 	pReadbackBuffer->Unmap(0, nullptr);
 
-	// 4. 使用stb_image_write保存为PNG
-	stbi_write_png("file.png", 512, 512, 4, pData, 512 * 4);
+	
+	stbi_write_png(filename.c_str(), 512, 512, 4, pData, 512 * 4);
 
 }
 
@@ -907,6 +893,7 @@ void App::Update()
 		ImGui::SliderFloat2("FrequencyScale", &m_PerlinNoiseData.FrequencyScale.x, 0.01, 10);
 		memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 
+		ImGui::InputText("file name", &filename[0], 512);
 		if (ImGui::Button("export"))
 		{
 			exporting = true;
