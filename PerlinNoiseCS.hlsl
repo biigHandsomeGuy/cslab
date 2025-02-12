@@ -2,9 +2,6 @@ RWTexture2D<float4> PerlinTexture : register(u0); // UAV 目标纹理
 cbuffer CB : register(b0)
 {
     float2 NoiseScale; // 控制噪声细节 (放大噪声坐标)
-    int Octaves; // 噪声的 octaves 数量
-    float Persistence; // 振幅衰减（控制每个 octave 的权重）
-    float2 FrequencyScale; // 用于调整每个 octave 的频率
 }
 
 // 梯度方向（增强梯度多样性）
@@ -59,22 +56,6 @@ float PerlinNoise(float x, float y)
     return lerp(ix0, ix1, sy) * 0.5 + 0.5; // 归一化到 [0,1]
 }
 
-// 综合多重分辨率噪声（Octaves）
-float FractalNoise(float x, float y)
-{
-    float amplitude = 1.0;
-    float frequency = 1.0;
-    float noiseValue = 0.0;
-
-    for (int i = 0; i < Octaves; i++)
-    {
-        noiseValue += PerlinNoise(x * frequency, y * frequency) * amplitude;
-        amplitude *= Persistence; // 振幅衰减
-        frequency *= 2.0; // 频率递增
-    }
-
-    return noiseValue;
-}
 
 // Compute Shader 主函数
 [numthreads(8, 8, 1)]
@@ -87,7 +68,7 @@ void main(uint3 id : SV_DispatchThreadID)
     float2 uv = float2(id.xy) / float2(dims);
 
     // 使用多重分辨率噪声生成复杂的噪声图
-    float noiseValue = FractalNoise(uv.x * NoiseScale.x, uv.y * NoiseScale.y);
+    float noiseValue = PerlinNoise(uv.x * NoiseScale.x, uv.y * NoiseScale.y);
 
     // 将噪声值写入目标纹理
     PerlinTexture[id.xy] = float4(noiseValue, noiseValue, noiseValue, 1);
