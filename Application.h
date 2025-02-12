@@ -79,7 +79,7 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE CurrentBackBufferView()const;
 	D3D12_CPU_DESCRIPTOR_HANDLE DepthStencilView()const;
 
-
+	void ExportTexture();
 private:
 	
 	ComPtr<ID3D12RootSignature> m_RootSignature = nullptr;
@@ -156,6 +156,9 @@ private:
 	UINT m_DsvDescriptorSize;
 
 	XMMATRIX m_ProjectionMatrix;
+
+	Microsoft::WRL::ComPtr<ID3D12Resource> pReadbackBuffer;
+	bool exporting;
 };
 
 

@@ -1,6 +1,8 @@
+#define _CRT_SECURE_NO_WARNINGS 1
 #include "Application.h"
 
-
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
 #include "d3dx12.h"
 #include <d3dcompiler.h>
 #include "CompiledShaders/PerlinNoiseCS.h"
@@ -806,6 +808,85 @@ D3D12_CPU_DESCRIPTOR_HANDLE App::DepthStencilView()const
 	return m_DsvHeap->GetCPUDescriptorHandleForHeapStart();
 }
 
+void App::ExportTexture()
+{
+	D3D12_HEAP_PROPERTIES heapProps = {};
+	heapProps.Type = D3D12_HEAP_TYPE_READBACK;
+	heapProps.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+	heapProps.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+	heapProps.CreationNodeMask = 1;
+	heapProps.VisibleNodeMask = 1;
+
+	D3D12_RESOURCE_DESC desc = m_PerlinTexture->GetDesc();
+	D3D12_PLACED_SUBRESOURCE_FOOTPRINT layout;
+	UINT64 bufferSize = 0;
+	m_Device->GetCopyableFootprints(&desc, 0, 1, 0, &layout, nullptr, nullptr, &bufferSize);
+
+	D3D12_RESOURCE_DESC bufferDesc = {};
+	bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	bufferDesc.Width = bufferSize;
+	bufferDesc.Height = 1;
+	bufferDesc.DepthOrArraySize = 1;
+	bufferDesc.MipLevels = 1;
+	bufferDesc.Format = DXGI_FORMAT_UNKNOWN;
+	bufferDesc.SampleDesc.Count = 1;
+	bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+
+	HRESULT hr = m_Device->CreateCommittedResource(
+		&heapProps,
+		D3D12_HEAP_FLAG_NONE,
+		&bufferDesc,
+		D3D12_RESOURCE_STATE_COPY_DEST,
+		nullptr,
+		IID_PPV_ARGS(&pReadbackBuffer)
+	);
+	// 资源屏障：将源纹理转为COPY_SOURCE状态
+	D3D12_RESOURCE_BARRIER barrier = {};
+	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	barrier.Transition.pResource = m_PerlinTexture.Get();
+	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+	m_CommandList->ResourceBarrier(1, &barrier);
+
+	// 执行复制
+	D3D12_TEXTURE_COPY_LOCATION srcLoc = {};
+	srcLoc.pResource = m_PerlinTexture.Get();
+	srcLoc.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+	srcLoc.SubresourceIndex = 0;
+
+	D3D12_TEXTURE_COPY_LOCATION dstLoc = {};
+	dstLoc.pResource = pReadbackBuffer.Get();
+	dstLoc.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+	dstLoc.PlacedFootprint = layout;
+
+	m_CommandList->CopyTextureRegion(&dstLoc, 0, 0, 0, &srcLoc, nullptr);
+
+	// 提交命令并等待完成
+	m_CommandList->Close();
+	ID3D12CommandList* ppCommandLists[] = { m_CommandList.Get()};
+	m_CommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+
+	FlushCommandQueue();
+	ThrowIfFailed(m_CommandAllocator->Reset());
+
+	// A command list can be reset after it has been added to the command queue via ExecuteCommandList.
+	// Reusing the command list reuses memory.
+	ThrowIfFailed(m_CommandList->Reset(m_CommandAllocator.Get(), m_PSOs["opaque"].Get()));
+
+	// 3. 映射数据并处理
+	BYTE* pData;
+	hr = pReadbackBuffer->Map(0, nullptr, reinterpret_cast<void**>(&pData));
+	if (FAILED(hr)) { /* 处理错误 */ }
+
+
+	pReadbackBuffer->Unmap(0, nullptr);
+
+	// 4. 使用stb_image_write保存为PNG
+	stbi_write_png("file.png", 512, 512, 4, pData, 512 * 4);
+
+}
+
 
 
 
@@ -826,6 +907,11 @@ void App::Update()
 		ImGui::SliderFloat2("FrequencyScale", &m_PerlinNoiseData.FrequencyScale.x, 0.01, 10);
 		memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 
+		if (ImGui::Button("export"))
+		{
+			exporting = true;
+		}
+
 		ImGui::End();
 	}
 }
@@ -842,6 +928,11 @@ void App::Draw()
 	// Reusing the command list reuses memory.
 	ThrowIfFailed(m_CommandList->Reset(m_CommandAllocator.Get(), m_PSOs["opaque"].Get()));
 
+	if (exporting)
+	{
+		ExportTexture();
+		exporting = false;
+	}
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { m_SrvDescriptorHeap.Get() };
 	m_CommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
