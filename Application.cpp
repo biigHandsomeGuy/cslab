@@ -888,9 +888,6 @@ void App::Update()
 
 
 		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 10);
-		ImGui::SliderInt("Octaves", &m_PerlinNoiseData.Octaves, 0, 10);
-		ImGui::SliderFloat("Persistence", &m_PerlinNoiseData.Persistence, 0.01, 1);
-		ImGui::SliderFloat2("FrequencyScale", &m_PerlinNoiseData.FrequencyScale.x, 0.01, 10);
 		memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 
 		ImGui::InputText("file name", &filename[0], 512);

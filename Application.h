@@ -26,9 +26,6 @@ struct Vertex
 __declspec(align(256)) struct PerlinNoiseConstants
 {
 	XMFLOAT2 NoiseScale;
-	int Octaves = 1; // 噪声的 octaves 数量
-	float Persistence = 1; // 振幅衰减（控制每个 octave 的权重）
-	XMFLOAT2 FrequencyScale = { 1,1 }; // 用于调整每个 octave 的频率
 };
 
 enum class HeapLayout : UINT8
