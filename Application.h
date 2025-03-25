@@ -1,7 +1,6 @@
 #pragma once
 
 #include <d3d12.h>
-
 #include <wrl/client.h>
 #include <dxgi1_4.h>
 #include <unordered_map>
@@ -16,7 +15,26 @@ using namespace DirectX;
 #pragma comment(lib, "D3D12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+class Timer
+{
+public:
+	Timer()
+	{
+		QueryPerformanceFrequency(&frequency);
+		QueryPerformanceCounter(&startTime);
+	}
 
+	double GetElapsedTime()
+	{
+		LARGE_INTEGER currentTime;
+		QueryPerformanceCounter(&currentTime);
+		return static_cast<double>(currentTime.QuadPart - startTime.QuadPart) / frequency.QuadPart;
+	}
+
+private:
+	LARGE_INTEGER frequency;
+	LARGE_INTEGER startTime;
+};
 struct Vertex
 {
 	XMFLOAT4 position;
@@ -26,6 +44,13 @@ struct Vertex
 __declspec(align(256)) struct PerlinNoiseConstants
 {
 	XMFLOAT2 NoiseScale;
+	FLOAT scale;
+	FLOAT time;
+};
+
+enum class NoiseType
+{
+	WhiteNoise, PerlinNosie, VoronoiNoise, Counts
 };
 
 enum class HeapLayout : UINT8
@@ -61,7 +86,7 @@ public:
 private:
 	void CreateRtvAndDsvDescriptorHeaps();
 	void OnResize();
-	void Update();
+	void Update(float time);
 	void Draw();
 
 	
@@ -78,7 +103,8 @@ private:
 
 	void ExportTexture();
 private:
-	
+	int m_CurrentNoiseType;
+
 	ComPtr<ID3D12RootSignature> m_RootSignature = nullptr;
 	ComPtr<ID3D12DescriptorHeap> m_SrvDescriptorHeap = nullptr;
 
@@ -144,7 +170,7 @@ private:
 	DXGI_FORMAT m_BackBufferFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
 
 	DXGI_FORMAT m_DepthStencilFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;
-	int m_ClientWidth = 800;
+	int m_ClientWidth = 600;
 	int m_ClientHeight = 600;
 
 
@@ -157,6 +183,7 @@ private:
 	Microsoft::WRL::ComPtr<ID3D12Resource> pReadbackBuffer;
 	bool exporting;
 	std::string filename;
+	Timer timer;
 };
 
 

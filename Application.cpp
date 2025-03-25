@@ -6,6 +6,8 @@
 #include "d3dx12.h"
 #include <d3dcompiler.h>
 #include "CompiledShaders/PerlinNoiseCS.h"
+#include "CompiledShaders/WhiteNoiseCS.h"
+#include "CompiledShaders/VoronoiNoiseCS.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/imgui_impl_win32.h"
@@ -345,9 +347,21 @@ bool App::Initialize()
 
 			D3D12_COMPUTE_PIPELINE_STATE_DESC computeDesc = {};
 			computeDesc.pRootSignature = computeRootSignature.Get();
+			computeDesc.CS = { g_pWhiteNoiseCS,sizeof(g_pWhiteNoiseCS) };
+			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["white"])));
+
+			
+			computeDesc.pRootSignature = computeRootSignature.Get();
 			computeDesc.CS = { g_pPerlinNoiseCS,sizeof(g_pPerlinNoiseCS) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["perlin"])));
+
+			
+			computeDesc.pRootSignature = computeRootSignature.Get();
+			computeDesc.CS = { g_pVoronoiNoiseCS,sizeof(g_pVoronoiNoiseCS) };
+			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["voronoi"])));
 		}
 		// CreateVertexBuffer();
 		ComPtr<ID3D12Resource> rectangleVBUpload;
@@ -876,18 +890,22 @@ void App::ExportTexture()
 
 
 
-void App::Update()
+void App::Update(float time)
 {
 	ImGui_ImplDX12_NewFrame();
 	ImGui_ImplWin32_NewFrame();
 	ImGui::NewFrame();
 
-
+	m_PerlinNoiseData.time = time;
 	{
 		ImGui::Begin("PerlinNoise");
 
+		const char* items[] = { "WhiteNoise", "PerlinNosie", "VoronoiNoise" };
+		ImGui::ListBox("type", &m_CurrentNoiseType, items, IM_ARRAYSIZE(items), 4);
 
-		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 10);
+		ImGui::DragFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 1.0, 0, 10, "%.4f");
+		ImGui::DragFloat("noiseScale", &m_PerlinNoiseData.scale, 1.0, 0, 10, "%.4f");
+		// ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 100, "%.6f");
 		memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 
 		ImGui::InputText("file name", &filename[0], 512);
@@ -928,7 +946,19 @@ void App::Draw()
 
 
 	// ÉèÖÃ PipelineState
-	m_CommandList->SetPipelineState(m_PSOs["perlin"].Get());
+	if (m_CurrentNoiseType == 0)
+	{
+		m_CommandList->SetPipelineState(m_PSOs["white"].Get());
+	}
+	else if (m_CurrentNoiseType == 1)
+	{
+		m_CommandList->SetPipelineState(m_PSOs["perlin"].Get());
+	}
+	else if (m_CurrentNoiseType == 2)
+	{
+		m_CommandList->SetPipelineState(m_PSOs["voronoi"].Get());
+	}
+	
 	m_CommandList->SetComputeRootSignature(computeRootSignature.Get());
 
 	auto handle = m_SrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();
@@ -1021,7 +1051,7 @@ int App::Run()
 		{
 			if (!m_AppPaused)
 			{
-				Update();
+				Update(timer.GetElapsedTime());
 				Draw();
 			}
 			else

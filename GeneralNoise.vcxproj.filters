@@ -18,7 +18,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="PerlinNoise.cpp">
+    <ClCompile Include="Noise.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Application.cpp">
@@ -77,9 +77,18 @@
     <ClInclude Include="Application.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="stb_image_write.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="PerlinNoiseCS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
+    <FxCompile Include="WhiteNoiseCS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
+    <FxCompile Include="VoronoiNoiseCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
   </ItemGroup>

@@ -31,6 +31,7 @@ float GradientDot(int ix, int iy, float x, float y)
 // Hermite S 形曲线（平滑插值）
 float Fade(float t)
 {
+    //return 3*t*t - 2*t*t*t;
     return t * t * t * (t * (t * 6 - 15) + 10);
 }
 

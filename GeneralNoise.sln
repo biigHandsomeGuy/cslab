@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.35013.160
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PerlinNoise", "PerlinNoise.vcxproj", "{12CB2381-4913-41C4-A83A-DA6689DAED39}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GeneralNoise", "GeneralNoise.vcxproj", "{12CB2381-4913-41C4-A83A-DA6689DAED39}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
