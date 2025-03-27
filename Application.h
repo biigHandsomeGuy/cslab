@@ -44,7 +44,6 @@ struct Vertex
 __declspec(align(256)) struct PerlinNoiseConstants
 {
 	XMFLOAT2 NoiseScale;
-	FLOAT scale;
 	FLOAT time;
 };
 

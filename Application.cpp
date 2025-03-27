@@ -903,8 +903,7 @@ void App::Update(float time)
 		const char* items[] = { "WhiteNoise", "PerlinNosie", "VoronoiNoise" };
 		ImGui::ListBox("type", &m_CurrentNoiseType, items, IM_ARRAYSIZE(items), 4);
 
-		ImGui::DragFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 1.0, 0, 10, "%.4f");
-		ImGui::DragFloat("noiseScale", &m_PerlinNoiseData.scale, 1.0, 0, 10, "%.4f");
+		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 20);
 		// ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 100, "%.6f");
 		memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 
@@ -967,7 +966,7 @@ void App::Draw()
 	m_CommandList->SetComputeRootDescriptorTable(0, handle);
 	m_CommandList->SetComputeRootConstantBufferView(1, m_PerlinNoiseConstantBuffer->GetGPUVirtualAddress());
 	// 执行 Compute Shader
-	m_CommandList->Dispatch(64, 64, 1); // 512x512 纹理，每个线程组 8x8
+	m_CommandList->Dispatch(32, 32, 1); // 512x512 纹理，每个线程组 8x8
 
 
 
