@@ -1,15 +1,20 @@
 #### Introduce
-Use DX12 compute shader to generate simple Perlin Noise and use stbi_image library to export picture
+Use DX12 compute shader to generate some noise and use stbi_image library to export picture
 
-![](https://github.com/biigHandsomeGuy/PerlinNoise/blob/master/screenshot/Noise.png)
+#### List
 
+![](https://github.com/biigHandsomeGuy/PerlinNoise/blob/master/screenshot/PerlinNoise.png)
+
+> PerlinNoise
+
+![](https://github.com/biigHandsomeGuy/PerlinNoise/blob/master/screenshot/VoronoiNoise.gif)
+
+> VoronoiNoise
 #### Library
 Imgui
 
 stbi_image
 
-#### TODO
-- [ ] Add more Noise
 
 
 #### Refrence
