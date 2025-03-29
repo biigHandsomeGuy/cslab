@@ -8,6 +8,8 @@
 #include "CompiledShaders/PerlinNoiseCS.h"
 #include "CompiledShaders/WhiteNoiseCS.h"
 #include "CompiledShaders/VoronoiNoiseCS.h"
+#include "CompiledShaders/AmazingShader.h"
+
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx12.h"
 #include "imgui/imgui_impl_win32.h"
@@ -362,6 +364,11 @@ bool App::Initialize()
 			computeDesc.CS = { g_pVoronoiNoiseCS,sizeof(g_pVoronoiNoiseCS) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["voronoi"])));
+
+			computeDesc.pRootSignature = computeRootSignature.Get();
+			computeDesc.CS = { g_pAmazingShader,sizeof(g_pAmazingShader) };
+			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["amazing"])));
 		}
 		// CreateVertexBuffer();
 		ComPtr<ID3D12Resource> rectangleVBUpload;
@@ -900,7 +907,7 @@ void App::Update(float time)
 	{
 		ImGui::Begin("PerlinNoise");
 
-		const char* items[] = { "WhiteNoise", "PerlinNosie", "VoronoiNoise" };
+		const char* items[] = { "WhiteNoise", "PerlinNosie", "VoronoiNoise", "AmazingShader"};
 		ImGui::ListBox("type", &m_CurrentNoiseType, items, IM_ARRAYSIZE(items), 4);
 
 		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 20);
@@ -957,7 +964,10 @@ void App::Draw()
 	{
 		m_CommandList->SetPipelineState(m_PSOs["voronoi"].Get());
 	}
-	
+	else if (m_CurrentNoiseType == 3)
+	{
+		m_CommandList->SetPipelineState(m_PSOs["amazing"].Get());
+	}
 	m_CommandList->SetComputeRootSignature(computeRootSignature.Get());
 
 	auto handle = m_SrvDescriptorHeap->GetGPUDescriptorHandleForHeapStart();

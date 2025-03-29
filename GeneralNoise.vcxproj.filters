@@ -91,6 +91,9 @@
     <FxCompile Include="VoronoiNoiseCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
+    <FxCompile Include="AmazingShader.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="test.hlsl">
