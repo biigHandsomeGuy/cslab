@@ -20,9 +20,9 @@ float2x2 Rotation(float angle)
 
 float Gyroid(float3 p)
 {
-    
+    p.yz = mul(Rotation(time * 0.1), p.yz);
     p *= 10;
-    return abs(0.7 * dot(sin(p), cos(p.yzx)) / 10) - 0.03;
+    return abs(0.7 * dot(sin(p), cos(p.zxy)) / 10) - 0.03;
 }
 
 float sdBox(float3 p, float3 b)
@@ -49,22 +49,20 @@ float smin(float a, float b, float k)
 
 float GetDistance(float3 p)
 {
-    float3 sphere_position = p - float3(0, 1, 2);
-    sphere_position.xz = mul(Rotation(time), sphere_position.xz);
-    float sphere_distance = sdSphere(sphere_position, 1);
+    float sphere_distance = sdSphere(p, 1);
     sphere_distance = abs(sphere_distance) - 0.03;
     float g = Gyroid(p);
-    sphere_distance = smin(sphere_distance, g, -0.03);
+    sphere_distance = smin(sphere_distance, g, -0.04);
     
     
-    float plane_distance = p.y;
+    float plane_distance = p.y + 1;
     p.x -= time * 0.1;
     p *= 5.0;
     p.y += sin(p.z) * 0.5;
     float y = abs(dot(sin(p), cos(p.yzx))) * 0.1;
     plane_distance += y;
     
-    return min(sphere_distance, plane_distance);
+    return min(sphere_distance, plane_distance*0.9);
 }
 float3 GetNormal(float3 p)
 {
@@ -109,35 +107,50 @@ void main(uint3 id : SV_DispatchThreadID)
     float3 color = 0;
     
     // camera position
-    float3 ray_origin = float3(0, 1, 0);
+    float3 ray_origin = float3(0, 0, -2);
     float3 ray_direction = normalize(float3(uv.x, uv.y, 1));
     
     float d = RayMarch(ray_origin, ray_direction);
     
     float3 shading_point = ray_origin + ray_direction * d;
     
-    float3 light_pos = { 0, 1, 2 };
+    float3 light_pos = { 0, 0, 0 };
     // light_pos.xz += float2(sin(time), cos(time));
     float3 light_direction = normalize(light_pos - shading_point);
     float3 normal = GetNormal(shading_point);
     
     float diffuse_color = dot(light_direction, normal) * 0.5 + 0.5;
     
-    float center_distance = length(shading_point - float3(0, 1, 2));
+    float center_distance = length(shading_point - float3(0, 0, 0));
    
     
     color = diffuse_color;
     if (center_distance > 1.03)
     {
         float s = Gyroid(-light_direction);
-        float w = center_distance * 0.01;
+        float w = center_distance * 0.02;
         float shadow = smoothstep(-w, w, s);
         color *= shadow;
         
         color /= center_distance * center_distance;
 
     }
-    //color = pow(color, 0.4545);
-    //color = GetNormal(shading_point);
+    else
+    {
+        float sss = max(0., 1. - dot(uv, uv) * 25.);
+        sss *= sss;
+        float s = Gyroid(shading_point);
+        sss *= smoothstep(-0.03, 0, s);
+        
+        color += sss * float3(1, 0.1, 0.1);
+
+    }
+    
+    center_distance = dot(uv, uv);
+    
+    float light = 0.003 / center_distance;
+    color += light * smoothstep(0, 1, d-1);
+    color = pow(color, 0.4545);
+    
     OutputTexture[id.xy] = float4(color, 1);
 }

@@ -25,23 +25,53 @@ void main(uint3 id : SV_DispatchThreadID)
 
     float minDist = 100;
     int cellIndex = 0;
-
-    for (int i = 0; i < 30; i++)
+    float4 color = 0;
+    if(false)
     {
-        float2 n = N22(float2(i, i));
-        float2 p = n + sin(time + i * 0.5) * 0.5;
-        float d = length(uv - p);
-
-        if (d < minDist)
+        for (int i = 0; i < 30; i++)
         {
-            minDist = d;
-            cellIndex = i;
+            float2 n = N22(float2(i, i));
+            float2 p = n + sin(time + i * 0.5) * 0.5;
+            float d = length(uv - p);
+
+            if (d < minDist)
+            {
+                minDist = d;
+                cellIndex = i;
+            }
         }
     }
+    else
+    {
+        uv *= 3;
+        
+        float2 gv = frac(uv) - 0.5;
+        float2 id = floor(uv);
+        
+        for (int y = -1; y <= 1; y++)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                float2 offset = float2(x, y);
+                
+                float2 n = N22(id + offset);
+                float2 p = offset + sin(n * time) * 0.5;
+                float d = length(gv - p);
 
-    float3 voronoiColor = minDist;
+                if (d < minDist)
+                {
+                    minDist = d;
+                    //cellIndex = i;
+                }
+                
+            }
 
-    float4 color = float4(voronoiColor, 1.0);
+        }
+        color = minDist;
+
+    }
+
+    
 
     PerlinTexture[id.xy] = color;
-}
+    }

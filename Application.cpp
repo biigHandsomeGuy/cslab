@@ -6,7 +6,7 @@
 #include "d3dx12.h"
 #include <d3dcompiler.h>
 #include "CompiledShaders/PerlinNoiseCS.h"
-#include "CompiledShaders/WhiteNoiseCS.h"
+#include "CompiledShaders/RayMarching.h"
 #include "CompiledShaders/VoronoiNoiseCS.h"
 #include "CompiledShaders/AmazingShader.h"
 
@@ -349,7 +349,7 @@ bool App::Initialize()
 
 			D3D12_COMPUTE_PIPELINE_STATE_DESC computeDesc = {};
 			computeDesc.pRootSignature = computeRootSignature.Get();
-			computeDesc.CS = { g_pWhiteNoiseCS,sizeof(g_pWhiteNoiseCS) };
+			computeDesc.CS = { g_pRayMarching,sizeof(g_pRayMarching) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["white"])));
 
@@ -905,9 +905,9 @@ void App::Update(float time)
 
 	m_PerlinNoiseData.time = time;
 	{
-		ImGui::Begin("PerlinNoise");
+		ImGui::Begin("Debug");
 
-		const char* items[] = { "WhiteNoise", "PerlinNosie", "VoronoiNoise", "AmazingShader"};
+		const char* items[] = { "RayMarching", "PerlinNosie", "VoronoiNoise", "AmazingShader"};
 		ImGui::ListBox("type", &m_CurrentNoiseType, items, IM_ARRAYSIZE(items), 4);
 
 		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 20);

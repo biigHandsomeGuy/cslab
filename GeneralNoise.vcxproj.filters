@@ -85,7 +85,7 @@
     <FxCompile Include="PerlinNoiseCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
-    <FxCompile Include="WhiteNoiseCS.hlsl">
+    <FxCompile Include="RayMarching.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
     <FxCompile Include="VoronoiNoiseCS.hlsl">
