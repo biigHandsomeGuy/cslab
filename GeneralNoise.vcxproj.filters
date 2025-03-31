@@ -85,13 +85,13 @@
     <FxCompile Include="PerlinNoiseCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
-    <FxCompile Include="RayMarching.hlsl">
+    <FxCompile Include="RayMarchingCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
     <FxCompile Include="VoronoiNoiseCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
-    <FxCompile Include="AmazingShader.hlsl">
+    <FxCompile Include="HaloCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
   </ItemGroup>

@@ -6,9 +6,9 @@
 #include "d3dx12.h"
 #include <d3dcompiler.h>
 #include "CompiledShaders/PerlinNoiseCS.h"
-#include "CompiledShaders/RayMarching.h"
+#include "CompiledShaders/RayMarchingCS.h"
 #include "CompiledShaders/VoronoiNoiseCS.h"
-#include "CompiledShaders/AmazingShader.h"
+#include "CompiledShaders/HaloCS.h"
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_dx12.h"
@@ -349,7 +349,7 @@ bool App::Initialize()
 
 			D3D12_COMPUTE_PIPELINE_STATE_DESC computeDesc = {};
 			computeDesc.pRootSignature = computeRootSignature.Get();
-			computeDesc.CS = { g_pRayMarching,sizeof(g_pRayMarching) };
+			computeDesc.CS = { g_pRayMarchingCS,sizeof(g_pRayMarchingCS) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["white"])));
 
@@ -366,7 +366,7 @@ bool App::Initialize()
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["voronoi"])));
 
 			computeDesc.pRootSignature = computeRootSignature.Get();
-			computeDesc.CS = { g_pAmazingShader,sizeof(g_pAmazingShader) };
+			computeDesc.CS = { g_pHaloCS,sizeof(g_pHaloCS) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["amazing"])));
 		}
@@ -907,7 +907,7 @@ void App::Update(float time)
 	{
 		ImGui::Begin("Debug");
 
-		const char* items[] = { "RayMarching", "PerlinNosie", "VoronoiNoise", "AmazingShader"};
+		const char* items[] = { "RayMarching", "PerlinNosie", "VoronoiNoise", "Halo"};
 		ImGui::ListBox("type", &m_CurrentNoiseType, items, IM_ARRAYSIZE(items), 4);
 
 		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 20);
