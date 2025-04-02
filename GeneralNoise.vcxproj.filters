@@ -94,9 +94,15 @@
     <FxCompile Include="HaloCS.hlsl">
       <Filter>资源文件</Filter>
     </FxCompile>
+    <FxCompile Include="ValueNoiseCS.hlsl">
+      <Filter>资源文件</Filter>
+    </FxCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="test.hlsl">
+      <Filter>资源文件</Filter>
+    </None>
+    <None Include="Noise.hlsli">
       <Filter>资源文件</Filter>
     </None>
   </ItemGroup>

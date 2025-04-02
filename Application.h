@@ -43,8 +43,9 @@ struct Vertex
 
 __declspec(align(256)) struct PerlinNoiseConstants
 {
-	XMFLOAT2 NoiseScale;
-	FLOAT time;
+	FLOAT NoiseScale = 0;
+	INT Octave = 1;
+	FLOAT time = 0;
 };
 
 enum class NoiseType

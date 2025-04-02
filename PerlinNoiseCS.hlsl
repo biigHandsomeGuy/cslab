@@ -1,7 +1,10 @@
+#include "Noise.hlsli"
+
 RWTexture2D<float4> PerlinTexture : register(u0); 
 cbuffer CB : register(b0)
 {
-    float2 NoiseScale; 
+    float NoiseScale; 
+    int Octaves;
 }
 
 static const float2 Gradients[8] =
@@ -19,36 +22,30 @@ uint Hash(int x, int y)
     return a & 7;
 }
 
-float GradientDot(int ix, int iy, float x, float y)
+float GradientDot(int2 grid_coord, float2 uv)
 {
-    float2 gradient = Gradients[Hash(ix, iy)];
-    return dot(gradient, float2(x - ix, y - iy));
+    float2 gradient = Gradients[Hash(grid_coord.x, grid_coord.y)];
+    return dot(gradient, float2(uv - grid_coord));
 }
 
-float Fade(float t)
+
+
+float PerlinNoise(float2 uv)
 {
-    return t * t * t * (t * (t * 6 - 15) + 10);
-}
-
-float PerlinNoise(float x, float y)
-{
-    int x0 = (int) floor(x);
-    int y0 = (int) floor(y);
-    int x1 = x0 + 1;
-    int y1 = y0 + 1;
-
-    float sx = Fade(x - x0);
-    float sy = Fade(y - y0);
-
-    float n0 = GradientDot(x0, y0, x, y);
-    float n1 = GradientDot(x1, y0, x, y);
-    float ix0 = lerp(n0, n1, sx);
-
-    float n2 = GradientDot(x0, y1, x, y);
-    float n3 = GradientDot(x1, y1, x, y);
-    float ix1 = lerp(n2, n3, sx);
-
-    return lerp(ix0, ix1, sy) * 0.5 + 0.5;
+    float2 block_id = floor(uv);
+    
+    float2 local_uv = Fade(frac(uv));
+    
+    float top_left = GradientDot(block_id, uv);
+    float top_right = GradientDot(block_id + float2(1, 0), uv);
+     
+    float bottom_left = GradientDot(block_id + float2(0, 1), uv);
+    float bottom_right = GradientDot(block_id + float2(1, 1), uv);
+    
+    float lerp_top = lerp(top_left, top_right, local_uv.x);
+    float lerp_bottom = lerp(bottom_left, bottom_right, local_uv.x);
+    
+    return lerp(lerp_top, lerp_bottom, local_uv.y) * 0.5 + 0.5;
 }
 
 [numthreads(16, 16, 1)]
@@ -59,7 +56,22 @@ void main(uint3 id : SV_DispatchThreadID)
 
     float2 uv = float2(id.xy) / float2(dims);
 
-    float noiseValue = PerlinNoise(uv.x * NoiseScale.x, uv.y * NoiseScale.y);
+    float3 color = 0;
+    
+    float frequency = 1;
+    float amplitude = 1;
+    float stacking = 0;
+    for (int i = 0; i < Octaves; i++)
+    {
+        stacking += amplitude;
+        color += amplitude * PerlinNoise(uv * NoiseScale.x * frequency);
+        frequency *= 2;
+        
+        amplitude *= 0.5;
 
-    PerlinTexture[id.xy] = float4(noiseValue, noiseValue, noiseValue, 1);
+    }
+    
+    color /= stacking;
+    
+    PerlinTexture[id.xy] = float4(color, 1);
 }

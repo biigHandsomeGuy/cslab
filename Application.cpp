@@ -8,6 +8,7 @@
 #include "CompiledShaders/PerlinNoiseCS.h"
 #include "CompiledShaders/RayMarchingCS.h"
 #include "CompiledShaders/VoronoiNoiseCS.h"
+#include "CompiledShaders/ValueNoiseCS.h"
 #include "CompiledShaders/HaloCS.h"
 
 #include "imgui/imgui.h"
@@ -364,7 +365,11 @@ bool App::Initialize()
 			computeDesc.CS = { g_pVoronoiNoiseCS,sizeof(g_pVoronoiNoiseCS) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["voronoi"])));
-
+			
+			computeDesc.pRootSignature = computeRootSignature.Get();
+			computeDesc.CS = { g_pValueNoiseCS,sizeof(g_pValueNoiseCS) };
+			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
+			ThrowIfFailed(m_Device->CreateComputePipelineState(&computeDesc, IID_PPV_ARGS(&m_PSOs["value"])));
 			computeDesc.pRootSignature = computeRootSignature.Get();
 			computeDesc.CS = { g_pHaloCS,sizeof(g_pHaloCS) };
 			computeDesc.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
@@ -432,10 +437,7 @@ bool App::Initialize()
 				nullptr,
 				IID_PPV_ARGS(&m_PerlinNoiseConstantBuffer)));
 
-			// Initialize the const buffers
-			XMFLOAT2 noise = { 1,1 };
-			m_PerlinNoiseData.NoiseScale = noise;
-
+			
 			ThrowIfFailed(m_PerlinNoiseConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&m_pComputeCbvDataBegin)));
 			memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 		}
@@ -907,10 +909,11 @@ void App::Update(float time)
 	{
 		ImGui::Begin("Debug");
 
-		const char* items[] = { "RayMarching", "PerlinNosie", "VoronoiNoise", "Halo"};
+		const char* items[] = { "RayMarching", "PerlinNosie", "VoronoiNoise", "ValueNoise", "Halo"};
 		ImGui::ListBox("type", &m_CurrentNoiseType, items, IM_ARRAYSIZE(items), 4);
 
-		ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 20);
+		ImGui::SliderFloat("noiseScale", &m_PerlinNoiseData.NoiseScale, 0, 20);
+		ImGui::SliderInt("octave", &m_PerlinNoiseData.Octave, 1, 5);
 		// ImGui::SliderFloat2("noiseScale", &m_PerlinNoiseData.NoiseScale.x, 0, 100, "%.6f");
 		memcpy(m_pComputeCbvDataBegin, &m_PerlinNoiseData, sizeof(PerlinNoiseConstants));
 
@@ -965,6 +968,10 @@ void App::Draw()
 		m_CommandList->SetPipelineState(m_PSOs["voronoi"].Get());
 	}
 	else if (m_CurrentNoiseType == 3)
+	{
+		m_CommandList->SetPipelineState(m_PSOs["value"].Get());
+	}
+	else if (m_CurrentNoiseType == 4)
 	{
 		m_CommandList->SetPipelineState(m_PSOs["amazing"].Get());
 	}
