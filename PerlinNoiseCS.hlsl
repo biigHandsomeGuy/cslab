@@ -25,7 +25,7 @@ uint Hash(int x, int y)
 float GradientDot(int2 grid_coord, float2 uv)
 {
     float2 gradient = Gradients[Hash(grid_coord.x, grid_coord.y)];
-    return dot(gradient, float2(uv - grid_coord));
+    return dot(gradient, float2(grid_coord - uv));
 }
 
 
@@ -48,15 +48,9 @@ float PerlinNoise(float2 uv)
     return lerp(lerp_top, lerp_bottom, local_uv.y) * 0.5 + 0.5;
 }
 
-[numthreads(16, 16, 1)]
-void main(uint3 id : SV_DispatchThreadID)
+float fbm(float2 uv)
 {
-    int2 dims;
-    PerlinTexture.GetDimensions(dims.x, dims.y);
-
-    float2 uv = float2(id.xy) / float2(dims);
-
-    float3 color = 0;
+    float color = 0;
     
     float frequency = 1;
     float amplitude = 1;
@@ -65,13 +59,33 @@ void main(uint3 id : SV_DispatchThreadID)
     {
         stacking += amplitude;
         color += amplitude * PerlinNoise(uv * NoiseScale.x * frequency);
-        frequency *= 2;
+        frequency *= 1.8;
         
-        amplitude *= 0.5;
+        amplitude *= 0.7;
 
     }
-    
+
     color /= stacking;
+    return color;
+}
+
+float pattern(float2 p)
+{
+
+    return fbm(p + fbm(p + fbm(p)));
+}
+
+
+[numthreads(16, 16, 1)]
+void main(uint3 id : SV_DispatchThreadID)
+{
+    int2 dims;
+    PerlinTexture.GetDimensions(dims.x, dims.y);
+
+    float2 uv = float2(id.xy) / float2(dims);
+
+    float3 color = fbm(uv);
     
+  
     PerlinTexture[id.xy] = float4(color, 1);
 }
